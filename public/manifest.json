@@ -1,0 +1,9 @@
+{
+  "name": "NunezTracker",
+  "short_name": "NunezTracker",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4efe6",
+  "theme_color": "#c45c26",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
