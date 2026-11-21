@@ -51,52 +51,55 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-6xl">
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-[var(--line)] p-5 md:flex">
-        <Link href="/" className="font-[family-name:var(--font-display)] text-2xl">
+    <div className="shell">
+      <aside className="shell-side">
+        <Link href="/" className="brand">
           NunezTracker
         </Link>
-        <p className="mt-1 text-sm text-[var(--muted)]">{name}</p>
+        <p className="user-name">{name}</p>
         {sample && (
-          <p className="mt-2 rounded-lg bg-amber-100 px-2 py-1 text-xs text-amber-900">Sample data — no database yet</p>
+          <p className="card" style={{ marginTop: "0.75rem", padding: "0.45rem 0.6rem", fontSize: "0.75rem" }}>
+            Sample data — no database yet
+          </p>
         )}
-        <nav className="mt-8 flex flex-col gap-1">
+        <nav className="side-nav">
           {nav.map((n) => (
-            <Link
-              key={n.href}
-              href={n.href}
-              className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${path === n.href ? "bg-[var(--ink)] text-[var(--paper)]" : "hover:bg-black/5"}`}
-            >
+            <Link key={n.href} href={n.href} className={path === n.href ? "active" : undefined}>
               <n.icon size={16} />
               {n.label}
             </Link>
           ))}
         </nav>
-        <p className="mt-8 text-xs uppercase tracking-wide text-[var(--muted)]">Objects</p>
-        <nav className="mt-2 flex flex-col gap-1">
+        <p className="obj-label">Objects</p>
+        <nav className="obj-nav">
           {types.map((t) => (
-            <Link key={t.slug} href={`/o/${t.slug}`} className={`rounded-xl px-3 py-2 text-sm ${path.startsWith(`/o/${t.slug}`) ? "bg-black/5" : "hover:bg-black/5"}`}>
+            <Link key={t.slug} href={`/o/${t.slug}`} className={path.startsWith(`/o/${t.slug}`) ? "active" : undefined}>
               {t.name}
             </Link>
           ))}
         </nav>
+        <Link href="/o/tasks/new" className="btn btn-primary" style={{ marginTop: "1.5rem" }}>
+          <Plus size={16} /> New task
+        </Link>
       </aside>
-      <div className="flex min-w-0 flex-1 flex-col pb-20 md:pb-0">
-        <header className="flex items-center justify-between border-b border-[var(--line)] px-4 py-3 md:hidden">
-          <span className="font-[family-name:var(--font-display)] text-xl">NunezTracker</span>
-          <Link href="/o/tasks/new" className="btn btn-primary px-3 py-1.5 text-sm">
+      <div className="shell-main">
+        <header className="topbar">
+          <span className="brand">NunezTracker</span>
+          <Link href="/o/tasks/new" className="btn btn-primary" style={{ padding: "0.45rem 0.85rem", fontSize: "0.85rem" }}>
             <Plus size={16} /> Add
           </Link>
         </header>
         {sample && onboarded && (
-          <div className="bg-amber-100 px-4 py-2 text-center text-sm text-amber-950 md:hidden">Sample data</div>
+          <div style={{ background: "#fde68a", padding: "0.5rem 1rem", textAlign: "center", fontSize: "0.85rem" }}>
+            Sample data
+          </div>
         )}
         <CheckinBanner />
-        <main className="flex-1 p-4 md:p-8">{children}</main>
+        <main className="page">{children}</main>
       </div>
-      <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 border-t border-[var(--line)] bg-[var(--paper)] md:hidden">
+      <nav className="tabbar" style={{ gridTemplateColumns: `repeat(${nav.length}, minmax(0, 1fr))` }}>
         {nav.map((n) => (
-          <Link key={n.href} href={n.href} className={`flex flex-col items-center gap-1 py-2 text-[11px] ${path === n.href ? "text-[var(--accent)]" : "text-[var(--muted)]"}`}>
+          <Link key={n.href} href={n.href} className={path === n.href ? "active" : undefined}>
             <n.icon size={18} />
             {n.label}
           </Link>

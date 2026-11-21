@@ -26,10 +26,12 @@ export function CheckinBanner() {
   if (!msg) return null;
 
   return (
-    <div className="mx-4 mt-3 rounded-2xl border border-[var(--accent)] bg-white p-4 md:mx-8">
-      <p className="text-xs uppercase tracking-wide text-[var(--accent)]">{msg.title} · local reminder</p>
-      <p className="mt-1 font-medium">{msg.body}</p>
-      <div className="mt-3 flex flex-wrap gap-2">
+    <div className="card" style={{ margin: "0.75rem 1rem 0", padding: "1rem", borderColor: "var(--accent)" }}>
+      <p className="lbl" style={{ color: "var(--accent)" }}>
+        {msg.title} · local reminder
+      </p>
+      <p style={{ margin: "0.35rem 0 0", fontWeight: 600 }}>{msg.body}</p>
+      <div className="pills">
         <button
           className="btn btn-primary text-sm"
           onClick={async () => {

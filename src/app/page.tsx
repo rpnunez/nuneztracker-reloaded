@@ -38,57 +38,61 @@ export default function HomePage() {
 
   return (
     <AppShell>
-      <h1 className="font-[family-name:var(--font-display)] text-3xl">Today</h1>
-      <p className="mt-1 text-[var(--muted)]">Stay with the plan. Complete, reschedule, or skip — don&apos;t ghost it.</p>
+      <h1 className="page-title">Today</h1>
+      <p className="lede">Stay with the plan. Complete, reschedule, or skip — don&apos;t ghost it.</p>
       {err && <p className="mt-4 text-[var(--warn)]">{err}</p>}
       {!data && !err && <p className="mt-8 text-[var(--muted)]">Loading your day…</p>}
       {data && (
         <>
-          <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="stats">
             <Stat label="Points" value={data.score.points} />
             <Stat label="Streak" value={`${data.score.streak}d`} />
             <Stat label="Due today" value={data.dueTasks.length} />
             <Stat label="Overdue" value={data.overdue.length} />
           </div>
           {data.overdue.length > 0 && (
-            <section className="mt-8">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--warn)]">Overdue — commit</h2>
-              <ul className="mt-3 space-y-2">
+            <section className="section">
+              <h2 style={{ color: "var(--warn)" }}>Overdue — commit</h2>
+              <ul className="stack">
                 {data.overdue.map((r) => (
                   <CommitCard key={r.id} rec={r} slug="tasks" onDone={() => act(r.id, "done")} onSkip={() => act(r.id, "blocked")} onMove={() => act(r.id, r.status, { dueAt: new Date(Date.now() + 86400000).toISOString() })} />
                 ))}
               </ul>
             </section>
           )}
-          <section className="mt-8">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">Tasks due today</h2>
+          <section className="section">
+            <h2>Tasks due today</h2>
             {data.dueTasks.length === 0 ? (
-              <p className="card mt-3 p-4 text-[var(--muted)]">Nothing due. Add a task if you&apos;re hiding work from yourself.</p>
+              <p className="card lede" style={{ padding: "1rem", marginTop: "0.75rem" }}>
+                Nothing due. Add a task if you&apos;re hiding work from yourself.
+              </p>
             ) : (
-              <ul className="mt-3 space-y-2">
+              <ul className="stack">
                 {data.dueTasks.map((r) => (
                   <CommitCard key={r.id} rec={r} slug="tasks" onDone={() => act(r.id, "done")} onSkip={() => act(r.id, "blocked")} onMove={() => act(r.id, r.status, { dueAt: new Date(Date.now() + 86400000).toISOString() })} />
                 ))}
               </ul>
             )}
           </section>
-          <section className="mt-8">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">Events</h2>
+          <section className="section">
+            <h2>Events</h2>
             {data.todayEvents.length === 0 ? (
-              <p className="card mt-3 p-4 text-[var(--muted)]">No events on the calendar today.</p>
+              <p className="card lede" style={{ padding: "1rem", marginTop: "0.75rem" }}>
+                No events on the calendar today.
+              </p>
             ) : (
-              <ul className="mt-3 space-y-2">
+              <ul className="stack">
                 {data.todayEvents.map((r) => (
                   <CommitCard key={r.id} rec={r} slug="events" onDone={() => act(r.id, "done")} onSkip={() => act(r.id, "skipped")} onMove={() => act(r.id, r.status, { dueAt: new Date(Date.now() + 86400000).toISOString() })} />
                 ))}
               </ul>
             )}
           </section>
-          <section className="mt-8">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">Badges</h2>
-            <div className="mt-3 flex flex-wrap gap-2">
+          <section className="section">
+            <h2>Badges</h2>
+            <div className="pills">
               {data.score.badges.map((b) => (
-                <span key={b.id} className={`rounded-full px-3 py-1 text-sm ${b.earnedAt ? "bg-[var(--sage)] text-white" : "bg-black/5 text-[var(--muted)]"}`}>
+                <span key={b.id} className={b.earnedAt ? "pill on" : "pill"}>
                   {b.name}
                 </span>
               ))}
@@ -102,9 +106,9 @@ export default function HomePage() {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="card p-4">
-      <div className="text-xs uppercase tracking-wide text-[var(--muted)]">{label}</div>
-      <div className="font-[family-name:var(--font-display)] text-2xl">{value}</div>
+    <div className="card stat">
+      <div className="lbl">{label}</div>
+      <div className="val">{value}</div>
     </div>
   );
 }
@@ -123,11 +127,11 @@ function CommitCard({
   onMove: () => void;
 }) {
   return (
-    <li className="card p-4">
-      <Link href={`/o/${slug}/${rec.id}`} className="font-semibold">
+    <li className="card" style={{ padding: "1rem" }}>
+      <Link href={`/o/${slug}/${rec.id}`} style={{ fontWeight: 600 }}>
         {rec.title}
       </Link>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="pills">
         <button className="btn btn-primary text-sm" onClick={onDone}>
           Done
         </button>

@@ -11,11 +11,11 @@ export default function LoginPage() {
   const [error, setError] = useState("");
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center p-6">
-      <h1 className="font-[family-name:var(--font-display)] text-4xl">NunezTracker</h1>
-      <p className="mt-2 text-[var(--muted)]">Sign in with the email and password you registered. New accounts wait for an admin to approve them.</p>
+    <div className="auth">
+      <h1 className="page-title">NunezTracker</h1>
+      <p className="lede">Sign in with the email and password you registered. New accounts wait for an admin to approve them.</p>
       <form
-        className="mt-8 space-y-3"
+        className="form-stack"
         onSubmit={async (e) => {
           e.preventDefault();
           setError("");

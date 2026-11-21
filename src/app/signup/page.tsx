@@ -12,11 +12,11 @@ export default function SignupPage() {
   const [error, setError] = useState("");
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center p-6">
-      <h1 className="font-[family-name:var(--font-display)] text-4xl">Request access</h1>
-      <p className="mt-2 text-[var(--muted)]">The first account becomes admin. Everyone after that stays pending until an admin approves them.</p>
+    <div className="auth">
+      <h1 className="page-title">Request access</h1>
+      <p className="lede">The first account becomes admin. Everyone after that stays pending until an admin approves them.</p>
       <form
-        className="mt-8 space-y-3"
+        className="form-stack"
         onSubmit={async (e) => {
           e.preventDefault();
           setError("");

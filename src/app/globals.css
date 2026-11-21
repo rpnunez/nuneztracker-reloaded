@@ -1,14 +1,21 @@
 @import "tailwindcss";
+@source "./**/*.{ts,tsx}";
+@source "../**/*.{ts,tsx}";
 
 :root {
-  --paper: #f4efe6;
-  --ink: #1d1914;
-  --muted: #6b6258;
-  --line: #e0d6c8;
-  --card: #fffaf3;
+  --paper: #f3eee6;
+  --ink: #1c1814;
+  --muted: #6e655c;
+  --line: #ddd3c5;
+  --card: #fffdf8;
   --accent: #c45c26;
   --sage: #2f6b4f;
   --warn: #a33b3b;
+  --nav-h: 4.25rem;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 html,
@@ -16,6 +23,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   min-height: 100%;
+  margin: 0;
 }
 
 body {
@@ -50,6 +58,7 @@ textarea {
   padding: 0.65rem 1rem;
   font-weight: 600;
   border: 1px solid transparent;
+  cursor: pointer;
 }
 
 .btn-primary {
@@ -60,6 +69,7 @@ textarea {
 .btn-ghost {
   background: transparent;
   border-color: var(--line);
+  color: var(--ink);
 }
 
 .field {
@@ -68,4 +78,235 @@ textarea {
   background: white;
   border-radius: 12px;
   padding: 0.7rem 0.85rem;
+}
+
+.shell {
+  display: flex;
+  min-height: 100dvh;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.shell-side {
+  display: none;
+  width: 15.5rem;
+  flex-shrink: 0;
+  flex-direction: column;
+  padding: 1.4rem 1.1rem;
+  border-right: 1px solid var(--line);
+  background: color-mix(in srgb, var(--paper) 70%, white);
+}
+
+.brand {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.55rem;
+  letter-spacing: -0.02em;
+}
+
+.user-name {
+  margin: 0.2rem 0 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.side-nav,
+.obj-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 1.5rem;
+}
+
+.side-nav a,
+.obj-nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  border-radius: 12px;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.92rem;
+}
+
+.side-nav a.active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.side-nav a:not(.active):hover,
+.obj-nav a:hover,
+.obj-nav a.active {
+  background: rgba(28, 24, 20, 0.06);
+}
+
+.obj-label {
+  margin: 1.6rem 0 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.shell-main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  padding-bottom: var(--nav-h);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.page {
+  flex: 1;
+  padding: 1.15rem 1rem 1.5rem;
+}
+
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+  padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom));
+}
+
+.tabbar a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  font-size: 0.68rem;
+  color: var(--muted);
+  padding: 0.25rem 0;
+}
+
+.tabbar a.active {
+  color: var(--accent);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+  margin-top: 1.25rem;
+}
+
+.stat {
+  padding: 0.9rem 1rem;
+}
+
+.stat .lbl {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.stat .val {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.7rem;
+  margin-top: 0.15rem;
+}
+
+.section {
+  margin-top: 1.75rem;
+}
+
+.section h2 {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+
+.pill {
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.82rem;
+  background: rgba(28, 24, 20, 0.06);
+  color: var(--muted);
+}
+
+.pill.on {
+  background: var(--sage);
+  color: white;
+}
+
+.page-title {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 2rem;
+  margin: 0;
+  letter-spacing: -0.03em;
+}
+
+.lede {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+}
+
+.auth {
+  min-height: 100dvh;
+  max-width: 26rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin-top: 1.75rem;
+}
+
+@media (min-width: 768px) {
+  .shell-side {
+    display: flex;
+  }
+  .shell-main {
+    padding-bottom: 0;
+  }
+  .topbar,
+  .tabbar {
+    display: none;
+  }
+  .page {
+    padding: 2rem 2.1rem;
+  }
+  .stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
