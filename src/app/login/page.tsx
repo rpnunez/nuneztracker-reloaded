@@ -13,7 +13,7 @@ export default function LoginPage() {
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center p-6">
       <h1 className="font-[family-name:var(--font-display)] text-4xl">NunezTracker</h1>
-      <p className="mt-2 text-[var(--muted)]">Sign in to your isolated workspace. On Cursor private hosting, you are already signed in as the app viewer.</p>
+      <p className="mt-2 text-[var(--muted)]">Sign in with the email and password you registered. New accounts wait for an admin to approve them.</p>
       <form
         className="mt-8 space-y-3"
         onSubmit={async (e) => {
@@ -25,7 +25,8 @@ export default function LoginPage() {
             body: JSON.stringify({ email, password }),
           });
           const d = await r.json();
-          if (!r.ok) setError(d.error || "Could not sign in");
+          if (d.code === "pending") router.replace("/pending");
+          else if (!r.ok) setError(d.error || "Could not sign in");
           else router.replace("/");
         }}
       >
@@ -37,11 +38,8 @@ export default function LoginPage() {
         </button>
       </form>
       <p className="mt-4 text-sm">
-        No account? <Link href="/signup" className="underline">Create one</Link>
+        No account? <Link href="/signup" className="underline">Request access</Link>
       </p>
-      <button className="mt-6 text-sm underline" onClick={() => router.replace("/")}>
-        Continue as local viewer
-      </button>
     </div>
   );
 }

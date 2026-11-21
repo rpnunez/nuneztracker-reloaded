@@ -22,9 +22,15 @@ export default function AdminPage() {
     <AppShell>
       <h1 className="font-[family-name:var(--font-display)] text-3xl">Object management</h1>
       <p className="text-[var(--muted)]">Rename types, archive extras, or add something like Documents. Fields are on the Object Fields page.</p>
-      <p className="mt-2">
+      <p className="mt-2 flex flex-wrap gap-4">
         <Link className="underline" href="/admin/fields">
           Object Fields
+        </Link>
+        <Link className="underline" href="/admin/users">
+          Users
+        </Link>
+        <Link className="underline" href="/admin/notifications">
+          Notification email
         </Link>
       </p>
       <ul className="mt-6 space-y-3">

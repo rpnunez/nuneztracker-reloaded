@@ -76,6 +76,8 @@ export type User = {
   streak: number;
   lastStreakDate: string | null;
   createdAt: string;
+  role: "admin" | "member";
+  status: "pending" | "active" | "rejected";
 };
 
 export type ScoreEvent = {

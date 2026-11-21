@@ -11,8 +11,10 @@ npm run dev
 
 Open the printed local URL (port **43127**).
 
-- **Continue as local viewer** uses the simulated Cursor identity (`dev@example.com`) with sample notes, tasks, and events.
-- Or **sign up** with email and password (8+ characters) for a separate isolated workspace.
+- There is **no guest mode**. Sign up with email and password (8+ characters).
+- The first signup becomes the admin and can use the app immediately.
+- Later signups stay **pending** until an admin approves them under Admin → Users.
+- Set Admin → Notification email so pending-signup alerts have a destination.
 
 Without `DATABASE_URL`, data lives in memory for this process and the UI labels it **sample data**. With Postgres, set `DATABASE_URL` and the app applies `migrations/001_init.sql` on first use.
 

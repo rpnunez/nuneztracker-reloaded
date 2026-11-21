@@ -1,18 +1,11 @@
 import { cookies } from "next/headers";
-import { getIdentity } from "../../cursor/identity.js";
-import { COOKIE } from "./auth";
-import { getUser, upsertIdentityUser } from "./store";
+import { COOKIE, verifySession } from "./session-token";
+import { getUser } from "./store";
 
 export async function pageUser() {
-  const jar = await cookies();
-  const sid = jar.get(COOKIE)?.value;
-  if (sid) {
-    const u = await getUser(sid);
-    if (u) return u;
-  }
-  const identity = await getIdentity({ headers: {} });
-  if (identity.verified && "email" in identity && identity.email) {
-    return upsertIdentityUser(identity.email, identity.name ?? identity.email);
-  }
-  return null;
+  const parsed = verifySession((await cookies()).get(COOKIE)?.value);
+  if (!parsed) return null;
+  const u = await getUser(parsed.userId);
+  if (!u || u.email !== parsed.email || u.status !== "active") return null;
+  return u;
 }

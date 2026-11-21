@@ -77,6 +77,11 @@ export default function SettingsPage() {
         <button className="btn btn-primary">Save</button>
         {saved && <span className="ml-2 text-sm text-[var(--sage)]">{saved}</span>}
       </form>
+      <p className="mt-8">
+        <a className="underline" href="/admin/notifications">
+          Notification email (admin)
+        </a>
+      </p>
       <button className="btn btn-ghost mt-6" onClick={enablePush}>
         Enable push notifications
       </button>

@@ -15,12 +15,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [name, setName] = useState("");
   const [onboarded, setOnboarded] = useState(true);
   const [sample, setSample] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     fetch("/api/me")
       .then((r) => {
         if (r.status === 401) {
           router.replace("/login");
+          return null;
+        }
+        if (r.status === 403) {
+          router.replace("/pending");
           return null;
         }
         return r.json();
@@ -31,6 +36,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         setName(d.user?.name || d.user?.email || "");
         setOnboarded(Boolean(d.user?.onboarded));
         setSample(Boolean(d.sample));
+        setIsAdmin(d.user?.role === "admin");
         if (d.user && !d.user.onboarded && path !== "/onboarding") router.replace("/onboarding");
       })
       .catch(() => router.replace("/login"));
@@ -40,7 +46,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { href: "/", label: "Today", icon: Home },
     { href: "/calendar", label: "Calendar", icon: CalendarDays },
     { href: "/score", label: "Score", icon: Medal },
-    { href: "/admin", label: "Admin", icon: Shapes },
+    ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: Shapes }] : []),
     { href: "/settings", label: "Settings", icon: Cog },
   ];
 

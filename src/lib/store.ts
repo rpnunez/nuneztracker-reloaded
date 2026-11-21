@@ -19,6 +19,7 @@ type Mem = {
   push: PushSub[];
   scores: ScoreEvent[];
   badges: { userId: string; badgeId: string; earnedAt: string }[];
+  notificationEmail: string;
 };
 
 const g = globalThis as unknown as { __nt?: Mem; __ntPool?: Pool; __ntMigrated?: boolean };
@@ -36,6 +37,7 @@ function mem(): Mem {
       push: [],
       scores: [],
       badges: [],
+      notificationEmail: "",
     };
   }
   return g.__nt;
@@ -54,12 +56,19 @@ function pool(): Pool | null {
 
 async function migrate(p: Pool) {
   if (g.__ntMigrated) return;
-  const sql = readFileSync(join(process.cwd(), "migrations/001_init.sql"), "utf8");
-  await p.query(sql);
+  for (const file of ["migrations/001_init.sql", "migrations/002_auth.sql"]) {
+    await p.query(readFileSync(join(process.cwd(), file), "utf8"));
+  }
   g.__ntMigrated = true;
 }
 
-function seedUser(email: string, name: string, passwordHash: string | null): User {
+function seedUser(
+  email: string,
+  name: string,
+  passwordHash: string | null,
+  role: User["role"],
+  status: User["status"],
+): User {
   const m = mem();
   const user: User = {
     id: nid(),
@@ -75,38 +84,29 @@ function seedUser(email: string, name: string, passwordHash: string | null): Use
     streak: 0,
     lastStreakDate: null,
     createdAt: nowIso(),
+    role,
+    status,
   };
   m.users.push(user);
+  if (status === "active") attachWorkspace(user);
+  return user;
+}
+
+function attachWorkspace(user: User) {
+  const m = mem();
+  if (m.types.some((t) => t.userId === user.id)) return;
   const { types, fields } = defaultTypes(user.id);
   m.types.push(...types);
   m.fields.push(...fields);
   if (usingSampleDb()) {
     m.records.push(...sampleRecords(user.id, types));
   }
-  return user;
-}
-
-export async function upsertIdentityUser(email: string, name: string): Promise<User> {
-  const p = pool();
-  if (!p) {
-    const m = mem();
-    let u = m.users.find((x) => x.email === email.toLowerCase());
-    if (!u) u = seedUser(email, name, null);
-    else if (name && u.name !== name) u.name = name;
-    return u;
-  }
-  await migrate(p);
-  const existing = await p.query("select * from users where email=$1", [email.toLowerCase()]);
-  if (existing.rows[0]) return mapUser(existing.rows[0]);
-  const user = seedUser(email, name, null);
-  await persistNewUser(p, user);
-  return user;
 }
 
 async function persistNewUser(p: Pool, user: User) {
   await p.query(
-    `insert into users (id,email,name,password_hash,timezone,onboarded,check_in_hours,due_reminders,points,streak,created_at)
-     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+    `insert into users (id,email,name,password_hash,timezone,onboarded,check_in_hours,due_reminders,points,streak,created_at,role,status)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
     [
       user.id,
       user.email,
@@ -119,6 +119,8 @@ async function persistNewUser(p: Pool, user: User) {
       user.points,
       user.streak,
       user.createdAt,
+      user.role,
+      user.status,
     ],
   );
   const types = mem().types.filter((t) => t.userId === user.id);
@@ -152,6 +154,8 @@ function mapUser(r: Record<string, unknown>): User {
     streak: Number(r.streak ?? 0),
     lastStreakDate: r.last_streak_date ? String(r.last_streak_date).slice(0, 10) : null,
     createdAt: new Date(r.created_at as string).toISOString(),
+    role: r.role === "admin" ? "admin" : "member",
+    status: r.status === "active" || r.status === "rejected" ? r.status : "pending",
   };
 }
 
@@ -171,16 +175,88 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   return r.rows[0] ? mapUser(r.rows[0]) : null;
 }
 
+export async function countUsers(): Promise<number> {
+  const p = pool();
+  if (!p) return mem().users.length;
+  await migrate(p);
+  const r = await p.query("select count(*)::int as n from users");
+  return Number(r.rows[0]?.n ?? 0);
+}
+
 export async function createLocalUser(email: string, name: string, passwordHash: string): Promise<User> {
   const existing = await getUserByEmail(email);
   if (existing) throw new Error("Email already registered");
-  const user = seedUser(email, name, passwordHash);
+  const first = (await countUsers()) === 0;
+  const user = seedUser(email, name, passwordHash, first ? "admin" : "member", first ? "active" : "pending");
+  if (first && !mem().notificationEmail) mem().notificationEmail = user.email;
   const p = pool();
   if (p) {
     await migrate(p);
     await persistNewUser(p, user);
+    if (first) {
+      await p.query(`insert into app_settings (id, notification_email) values ('default', $1)
+        on conflict (id) do update set notification_email = coalesce(nullif(app_settings.notification_email, ''), excluded.notification_email)`, [user.email]);
+    }
   }
   return user;
+}
+
+export async function listUsers(): Promise<User[]> {
+  const p = pool();
+  if (!p) return [...mem().users].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  await migrate(p);
+  const r = await p.query("select * from users order by created_at desc");
+  return r.rows.map(mapUser);
+}
+
+export async function setUserStatus(id: string, status: User["status"]): Promise<User> {
+  const u = await getUser(id);
+  if (!u) throw new Error("User not found");
+  u.status = status;
+  if (status === "active") attachWorkspace(u);
+  const p = pool();
+  if (p) {
+    await p.query("update users set status=$2 where id=$1", [id, status]);
+    if (status === "active") {
+      const types = mem().types.filter((t) => t.userId === id);
+      const fields = mem().fields.filter((f) => types.some((t) => t.id === f.objectTypeId));
+      for (const t of types) {
+        await p.query(
+          `insert into object_types (id,user_id,slug,name,icon,description,builtin,archived,statuses) values ($1,$2,$3,$4,$5,$6,$7,$8,$9) on conflict (id) do nothing`,
+          [t.id, t.userId, t.slug, t.name, t.icon, t.description, t.builtin, t.archived, JSON.stringify(t.statuses)],
+        );
+      }
+      for (const f of fields) {
+        await p.query(
+          `insert into object_fields (id,object_type_id,key,label,type,options,required,sort_order,builtin) values ($1,$2,$3,$4,$5,$6,$7,$8,$9) on conflict do nothing`,
+          [f.id, f.objectTypeId, f.key, f.label, f.type, JSON.stringify(f.options ?? null), f.required, f.sortOrder, f.builtin],
+        );
+      }
+    }
+  }
+  return u;
+}
+
+export async function getNotificationEmail(): Promise<string> {
+  const p = pool();
+  if (!p) return mem().notificationEmail;
+  await migrate(p);
+  const r = await p.query("select notification_email from app_settings where id='default'");
+  return String(r.rows[0]?.notification_email ?? "");
+}
+
+export async function setNotificationEmail(email: string): Promise<string> {
+  mem().notificationEmail = email;
+  const p = pool();
+  if (p) {
+    await migrate(p);
+    await p.query(
+      `insert into app_settings (id, notification_email) values ('default', $1)
+       on conflict (id) do update set notification_email=$1`,
+      [email],
+    );
+  }
+  return email;
 }
 
 export async function updateUser(id: string, patch: Partial<User>): Promise<User> {
@@ -194,7 +270,7 @@ export async function updateUser(id: string, patch: Partial<User>): Promise<User
   if (p) {
     await p.query(
       `update users set name=$2, timezone=$3, onboarded=$4, check_in_hours=$5, due_reminders=$6,
-       last_checkin_at=$7, points=$8, streak=$9, last_streak_date=$10, password_hash=$11 where id=$1`,
+       last_checkin_at=$7, points=$8, streak=$9, last_streak_date=$10, password_hash=$11, role=$12, status=$13 where id=$1`,
       [
         id,
         u.name,
@@ -207,6 +283,8 @@ export async function updateUser(id: string, patch: Partial<User>): Promise<User
         u.streak,
         u.lastStreakDate,
         u.passwordHash,
+        u.role,
+        u.status,
       ],
     );
   }
@@ -320,26 +398,47 @@ export async function createField(objectTypeId: string, data: Omit<ObjectField, 
   return f;
 }
 
-export async function updateField(id: string, patch: Partial<ObjectField>): Promise<ObjectField> {
-  const f = mem().fields.find((x) => x.id === id);
+export async function getOwnedField(userId: string, fieldId: string): Promise<ObjectField | null> {
+  const types = await listAllTypes(userId);
+  for (const t of types) {
+    const fields = await listFields(t.id);
+    const f = fields.find((x) => x.id === fieldId);
+    if (f) return f;
+  }
+  return null;
+}
+
+export async function updateField(userId: string, id: string, patch: Partial<ObjectField>): Promise<ObjectField> {
+  const f = await getOwnedField(userId, id);
   if (!f) throw new Error("Field not found");
   Object.assign(f, patch, { id: f.id, objectTypeId: f.objectTypeId, builtin: f.builtin });
+  const m = mem();
+  const i = m.fields.findIndex((x) => x.id === id);
+  if (i >= 0) m.fields[i] = f;
   const p = pool();
   if (p) {
     await p.query(
-      `update object_fields set label=$2, type=$3, options=$4, required=$5, sort_order=$6 where id=$1`,
-      [id, f.label, f.type, JSON.stringify(f.options ?? null), f.required, f.sortOrder],
+      `update object_fields set label=$2, type=$3, options=$4, required=$5, sort_order=$6
+       where id=$1 and object_type_id in (select id from object_types where user_id=$7)`,
+      [id, f.label, f.type, JSON.stringify(f.options ?? null), f.required, f.sortOrder, userId],
     );
   }
   return f;
 }
 
-export async function deleteField(id: string) {
-  const f = mem().fields.find((x) => x.id === id);
-  if (f?.builtin) throw new Error("Cannot delete built-in field");
+export async function deleteField(userId: string, id: string) {
+  const f = await getOwnedField(userId, id);
+  if (!f) throw new Error("Field not found");
+  if (f.builtin) throw new Error("Cannot delete built-in field");
   mem().fields = mem().fields.filter((x) => x.id !== id);
   const p = pool();
-  if (p) await p.query("delete from object_fields where id=$1 and builtin=false", [id]);
+  if (p) {
+    await p.query(
+      `delete from object_fields where id=$1 and builtin=false
+       and object_type_id in (select id from object_types where user_id=$2)`,
+      [id, userId],
+    );
+  }
 }
 
 export async function listRecords(userId: string, objectTypeId?: string): Promise<RecordItem[]> {

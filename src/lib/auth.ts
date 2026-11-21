@@ -1,42 +1,25 @@
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
-import { getIdentity } from "../../cursor/identity.js";
 import type { User } from "./types";
-import { createLocalUser, getUser, getUserByEmail, upsertIdentityUser } from "./store";
+import { COOKIE, sessionCookie, signSession, verifySession } from "./session-token";
+import { createLocalUser, getUser, getUserByEmail } from "./store";
 
-const COOKIE = "nt_session";
-
-export async function currentUser(request?: Request): Promise<User | null> {
+export async function requireUser(_request: Request): Promise<User | Response> {
   const jar = await cookies();
-  const sid = jar.get(COOKIE)?.value;
-  if (sid) {
-    const u = await getUser(sid);
-    if (u) return u;
-  }
-  const req =
-    request ??
-    new Request("http://local", {
-      headers: {},
-    });
-  const identity = await getIdentity(req);
-  if (identity.verified && "email" in identity && identity.email) {
-    return upsertIdentityUser(identity.email, identity.name ?? identity.email);
-  }
-  return null;
+  const parsed = verifySession(jar.get(COOKIE)?.value);
+  if (!parsed) return Response.json({ error: "Sign in required" }, { status: 401 });
+  const u = await getUser(parsed.userId);
+  if (!u || u.email !== parsed.email) return Response.json({ error: "Sign in required" }, { status: 401 });
+  if (u.status === "pending") return Response.json({ error: "Account pending approval", code: "pending" }, { status: 403 });
+  if (u.status !== "active") return Response.json({ error: "Account is not active" }, { status: 403 });
+  return u;
 }
 
-export async function requireUser(request: Request): Promise<User | Response> {
-  const jar = await cookies();
-  const sid = jar.get(COOKIE)?.value;
-  if (sid) {
-    const u = await getUser(sid);
-    if (u) return u;
-  }
-  const identity = await getIdentity(request);
-  if (identity.verified && "email" in identity && identity.email) {
-    return upsertIdentityUser(identity.email, identity.name ?? identity.email);
-  }
-  return Response.json({ error: "Sign in required" }, { status: 401 });
+export async function requireAdmin(request: Request): Promise<User | Response> {
+  const user = await requireUser(request);
+  if (user instanceof Response) return user;
+  if (user.role !== "admin") return Response.json({ error: "Admin only" }, { status: 403 });
+  return user;
 }
 
 export async function signup(email: string, password: string, name: string): Promise<User> {
@@ -49,18 +32,17 @@ export async function login(email: string, password: string): Promise<User> {
   if (!u?.passwordHash) throw new Error("Invalid email or password");
   const ok = await bcrypt.compare(password, u.passwordHash);
   if (!ok) throw new Error("Invalid email or password");
+  if (u.status === "pending") {
+    const err = new Error("Your account is waiting for admin approval.");
+    (err as Error & { code?: string }).code = "pending";
+    throw err;
+  }
+  if (u.status !== "active") throw new Error("This account was not approved.");
   return u;
 }
 
-export function sessionCookie(userId: string) {
-  return {
-    name: COOKIE,
-    value: userId,
-    httpOnly: true,
-    sameSite: "lax" as const,
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30,
-  };
+export function issueSession(user: User) {
+  return sessionCookie(signSession(user.id, user.email));
 }
 
 export { COOKIE };

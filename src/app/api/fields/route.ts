@@ -36,7 +36,7 @@ export async function PATCH(request: Request) {
   if (user instanceof Response) return user;
   const body = await request.json();
   try {
-    const f = await updateField(String(body.id), body);
+    const f = await updateField(user.id, String(body.id), body);
     return Response.json(f);
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Failed" }, { status: 400 });
@@ -50,7 +50,7 @@ export async function DELETE(request: Request) {
   const id = url.searchParams.get("id");
   if (!id) return Response.json({ error: "id required" }, { status: 400 });
   try {
-    await deleteField(id);
+    await deleteField(user.id, id);
     return Response.json({ ok: true });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Failed" }, { status: 400 });

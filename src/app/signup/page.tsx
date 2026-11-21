@@ -13,8 +13,8 @@ export default function SignupPage() {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center p-6">
-      <h1 className="font-[family-name:var(--font-display)] text-4xl">Create a workspace</h1>
-      <p className="mt-2 text-[var(--muted)]">Email and password. Your objects stay private to this account.</p>
+      <h1 className="font-[family-name:var(--font-display)] text-4xl">Request access</h1>
+      <p className="mt-2 text-[var(--muted)]">The first account becomes admin. Everyone after that stays pending until an admin approves them.</p>
       <form
         className="mt-8 space-y-3"
         onSubmit={async (e) => {
@@ -27,7 +27,8 @@ export default function SignupPage() {
           });
           const d = await r.json();
           if (!r.ok) setError(d.error || "Could not sign up");
-          else router.replace("/onboarding");
+          else if (d.firstAdmin) router.replace("/onboarding");
+          else router.replace("/pending");
         }}
       >
         <input className="field" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -39,7 +40,7 @@ export default function SignupPage() {
         </button>
       </form>
       <p className="mt-4 text-sm">
-        Already have an account? <Link href="/login" className="underline">Sign in</Link>
+        Already approved? <Link href="/login" className="underline">Sign in</Link>
       </p>
     </div>
   );

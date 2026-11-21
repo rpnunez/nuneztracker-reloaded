@@ -15,6 +15,8 @@ export async function GET(request: Request) {
       onboarded: user.onboarded,
       checkInHours: user.checkInHours,
       dueReminders: user.dueReminders,
+      role: user.role,
+      status: user.status,
     },
     types,
     score,
