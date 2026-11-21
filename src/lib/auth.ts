@@ -1,8 +1,10 @@
 import { cookies } from "next/headers";
+import { timingSafeEqual } from "crypto";
 import bcrypt from "bcryptjs";
 import type { User } from "./types";
+import { BOOTSTRAP_ADMIN_EMAIL } from "./bootstrap-admin";
 import { COOKIE, sessionCookie, signSession, verifySession } from "./session-token";
-import { createLocalUser, getUser, getUserByEmail } from "./store";
+import { createBootstrapAdmin, createLocalUser, getUser, getUserByEmail, markAdminSeeded } from "./store";
 
 export async function requireUser(_request: Request): Promise<User | Response> {
   const jar = await cookies();
@@ -27,8 +29,23 @@ export async function signup(email: string, password: string, name: string): Pro
   return createLocalUser(email, name || email.split("@")[0], hash);
 }
 
+function samePassword(a: string, b: string) {
+  const left = Buffer.from(a);
+  const right = Buffer.from(b);
+  if (left.length !== right.length) return false;
+  return timingSafeEqual(left, right);
+}
+
 export async function login(email: string, password: string): Promise<User> {
-  const u = await getUserByEmail(email);
+  const normalized = email.trim().toLowerCase();
+  const envPassword = process.env.ADMIN_INITIAL_PASSWORD?.trim();
+  if (normalized === BOOTSTRAP_ADMIN_EMAIL && envPassword && samePassword(password, envPassword)) {
+    const hash = await bcrypt.hash(envPassword, 10);
+    const admin = await createBootstrapAdmin(BOOTSTRAP_ADMIN_EMAIL, "Raymond", hash);
+    await markAdminSeeded();
+    return admin;
+  }
+  const u = await getUserByEmail(normalized);
   if (!u?.passwordHash) throw new Error("Invalid email or password");
   const ok = await bcrypt.compare(password, u.passwordHash);
   if (!ok) throw new Error("Invalid email or password");

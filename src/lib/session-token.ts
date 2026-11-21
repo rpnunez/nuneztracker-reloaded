@@ -57,7 +57,7 @@ export function sessionCookie(token: string) {
     sameSite: "lax" as const,
     path: "/",
     maxAge: MAX_AGE,
-    secure: Boolean(process.env.CURSOR_APP_ID),
+    secure: process.env.NODE_ENV === "production",
   };
 }
 

@@ -13,7 +13,7 @@ export default function LoginPage() {
   return (
     <div className="auth">
       <h1 className="page-title">NunezTracker</h1>
-      <p className="lede">Sign in with the email and password you registered. New accounts wait for an admin to approve them.</p>
+      <p className="lede">Admin sign-in is raypn93@gmail.com with the password saved as ADMIN_INITIAL_PASSWORD. Other accounts stay pending until an admin approves them.</p>
       <form
         className="form-stack"
         onSubmit={async (e) => {
@@ -21,8 +21,9 @@ export default function LoginPage() {
           setError("");
           const r = await fetch("/api/auth/login", {
             method: "POST",
+            credentials: "include",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
           });
           const d = await r.json();
           if (d.code === "pending") router.replace("/pending");

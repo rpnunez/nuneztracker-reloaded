@@ -4,8 +4,12 @@ import { ensureBootstrapAdmin } from "@/lib/bootstrap-admin";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
-  await ensureBootstrapAdmin();
-  if (!rateLimit(clientKey(request, "login"), 10, 15 * 60 * 1000)) {
+  try {
+    await ensureBootstrapAdmin();
+  } catch {
+    /* login still proceeds if seed fails */
+  }
+  if (!rateLimit(clientKey(request, "login"), 20, 15 * 60 * 1000)) {
     return Response.json({ error: "Too many sign-in attempts. Try again later." }, { status: 429 });
   }
   const body = await request.json();
