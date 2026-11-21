@@ -20,6 +20,7 @@ type Mem = {
   scores: ScoreEvent[];
   badges: { userId: string; badgeId: string; earnedAt: string }[];
   notificationEmail: string;
+  adminSeeded: boolean;
 };
 
 const g = globalThis as unknown as { __nt?: Mem; __ntPool?: Pool; __ntMigrated?: boolean };
@@ -38,6 +39,7 @@ function mem(): Mem {
       scores: [],
       badges: [],
       notificationEmail: "",
+      adminSeeded: false,
     };
   }
   return g.__nt;
@@ -56,7 +58,7 @@ function pool(): Pool | null {
 
 async function migrate(p: Pool) {
   if (g.__ntMigrated) return;
-  for (const file of ["migrations/001_init.sql", "migrations/002_auth.sql"]) {
+  for (const file of ["migrations/001_init.sql", "migrations/002_auth.sql", "migrations/003_admin_seed.sql"]) {
     await p.query(readFileSync(join(process.cwd(), file), "utf8"));
   }
   g.__ntMigrated = true;
@@ -270,6 +272,26 @@ export async function getNotificationEmail(): Promise<string> {
   await migrate(p);
   const r = await p.query("select notification_email from app_settings where id='default'");
   return String(r.rows[0]?.notification_email ?? "");
+}
+
+export async function isAdminSeeded(): Promise<boolean> {
+  const p = pool();
+  if (!p) return mem().adminSeeded;
+  await migrate(p);
+  const r = await p.query("select admin_seeded from app_settings where id='default'");
+  return Boolean(r.rows[0]?.admin_seeded);
+}
+
+export async function markAdminSeeded(): Promise<void> {
+  mem().adminSeeded = true;
+  const p = pool();
+  if (p) {
+    await migrate(p);
+    await p.query(
+      `insert into app_settings (id, notification_email, admin_seeded) values ('default', '', true)
+       on conflict (id) do update set admin_seeded=true`,
+    );
+  }
 }
 
 export async function setNotificationEmail(email: string): Promise<string> {

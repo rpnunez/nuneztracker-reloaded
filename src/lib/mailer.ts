@@ -29,11 +29,3 @@ export async function sendAdminMail(subject: string, text: string) {
   return deliver(to, subject, text, true);
 }
 
-export async function sendPasswordMail(to: string, password: string) {
-  return deliver(
-    to,
-    "Your NunezTracker admin password",
-    `An admin account was created for ${to}.\n\nTemporary password:\n${password}\n\nSign in and change this after you get in. This message is sent once, when the account is first created.`,
-    false,
-  );
-}

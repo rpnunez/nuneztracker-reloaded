@@ -13,7 +13,7 @@ Open the printed local URL (port **43127**).
 
 - There is **no guest mode**. Sign up with email and password (8+ characters).
 - Signups stay **pending** until an admin approves them under Admin → Users.
-- The bootstrap admin is `raypn93@gmail.com`. On first successful mail send, a generated password is emailed there (not logged). Later deploys do not rotate it.
+- The bootstrap admin is `raypn93@gmail.com`. Its password comes from the `ADMIN_INITIAL_PASSWORD` secret (never logged, never committed).
 - Sign-in and sign-up are rate limited.
 - Set Admin → Notification email so pending-signup alerts have a destination.
 
