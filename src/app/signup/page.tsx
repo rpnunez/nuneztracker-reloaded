@@ -14,7 +14,7 @@ export default function SignupPage() {
   return (
     <div className="auth">
       <h1 className="page-title">Request access</h1>
-      <p className="lede">The first account becomes admin. Everyone after that stays pending until an admin approves them.</p>
+      <p className="lede">New accounts stay pending until an admin approves them. Signup is not a path to admin.</p>
       <form
         className="form-stack"
         onSubmit={async (e) => {
@@ -27,7 +27,6 @@ export default function SignupPage() {
           });
           const d = await r.json();
           if (!r.ok) setError(d.error || "Could not sign up");
-          else if (d.firstAdmin) router.replace("/onboarding");
           else router.replace("/pending");
         }}
       >

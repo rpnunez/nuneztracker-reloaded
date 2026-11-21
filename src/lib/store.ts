@@ -186,17 +186,44 @@ export async function countUsers(): Promise<number> {
 export async function createLocalUser(email: string, name: string, passwordHash: string): Promise<User> {
   const existing = await getUserByEmail(email);
   if (existing) throw new Error("Email already registered");
-  const first = (await countUsers()) === 0;
-  const user = seedUser(email, name, passwordHash, first ? "admin" : "member", first ? "active" : "pending");
-  if (first && !mem().notificationEmail) mem().notificationEmail = user.email;
+  const user = seedUser(email, name, passwordHash, "member", "pending");
   const p = pool();
   if (p) {
     await migrate(p);
     await persistNewUser(p, user);
-    if (first) {
-      await p.query(`insert into app_settings (id, notification_email) values ('default', $1)
-        on conflict (id) do update set notification_email = coalesce(nullif(app_settings.notification_email, ''), excluded.notification_email)`, [user.email]);
+  }
+  return user;
+}
+
+export async function createBootstrapAdmin(email: string, name: string, passwordHash: string): Promise<User> {
+  const p = pool();
+  if (p) await migrate(p);
+  const existing = await getUserByEmail(email);
+  if (existing) {
+    existing.passwordHash = passwordHash;
+    existing.role = "admin";
+    existing.status = "active";
+    existing.name = existing.name || name;
+    attachWorkspace(existing);
+    if (p) {
+      await p.query(`update users set password_hash=$2, role='admin', status='active', name=$3 where id=$1`, [
+        existing.id,
+        passwordHash,
+        existing.name,
+      ]);
     }
+    if (!mem().notificationEmail) await setNotificationEmail(email);
+    return existing;
+  }
+  const user = seedUser(email, name, passwordHash, "admin", "active");
+  if (!mem().notificationEmail) mem().notificationEmail = email;
+  if (p) {
+    await persistNewUser(p, user);
+    await p.query(
+      `insert into app_settings (id, notification_email) values ('default', $1)
+       on conflict (id) do update set notification_email = coalesce(nullif(app_settings.notification_email, ''), excluded.notification_email)`,
+      [email],
+    );
   }
   return user;
 }

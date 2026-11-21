@@ -6,6 +6,9 @@ const MAX_AGE = 60 * 60 * 24 * 14;
 function secret(): string {
   const fromEnv = process.env.SESSION_SECRET?.trim();
   if (fromEnv) return fromEnv;
+  if (process.env.CURSOR_APP_ID) {
+    throw new Error("SESSION_SECRET is required");
+  }
   const g = globalThis as unknown as { __ntSessionSecret?: string };
   if (!g.__ntSessionSecret) g.__ntSessionSecret = randomBytes(32).toString("hex");
   return g.__ntSessionSecret;

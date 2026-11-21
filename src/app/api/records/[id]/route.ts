@@ -56,6 +56,9 @@ export async function PUT(request: Request, ctx: { params: Promise<{ id: string 
     return Response.json({ ok: true });
   }
   if (body.op === "unlink") {
+    const rec = await getRecord(user.id, id);
+    const other = await getRecord(user.id, String(body.toId));
+    if (!rec || !other) return Response.json({ error: "Not found" }, { status: 404 });
     await removeLink(id, String(body.toId));
     return Response.json({ ok: true });
   }

@@ -1,7 +1,9 @@
 import { requireUser } from "@/lib/auth";
+import { ensureBootstrapAdmin } from "@/lib/bootstrap-admin";
 import { listScore, listTypes, usingSampleDb } from "@/lib/store";
 
 export async function GET(request: Request) {
+  await ensureBootstrapAdmin();
   const user = await requireUser(request);
   if (user instanceof Response) return user;
   const types = await listTypes(user.id);

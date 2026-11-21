@@ -12,8 +12,9 @@ npm run dev
 Open the printed local URL (port **43127**).
 
 - There is **no guest mode**. Sign up with email and password (8+ characters).
-- The first signup becomes the admin and can use the app immediately.
-- Later signups stay **pending** until an admin approves them under Admin → Users.
+- Signups stay **pending** until an admin approves them under Admin → Users.
+- The bootstrap admin is `raypn93@gmail.com`. On first successful mail send, a generated password is emailed there (not logged). Later deploys do not rotate it.
+- Sign-in and sign-up are rate limited.
 - Set Admin → Notification email so pending-signup alerts have a destination.
 
 Without `DATABASE_URL`, data lives in memory for this process and the UI labels it **sample data**. With Postgres, set `DATABASE_URL` and the app applies `migrations/001_init.sql` on first use.
