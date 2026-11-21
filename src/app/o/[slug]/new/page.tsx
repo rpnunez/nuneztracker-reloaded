@@ -13,7 +13,10 @@ export default function NewRecordPage() {
   useEffect(() => {
     fetch("/api/types")
       .then((r) => r.json())
-      .then((types) => setType(types.find((t: { slug: string }) => t.slug === slug) ?? null));
+      .then((types) => {
+        if (!Array.isArray(types)) return;
+        setType(types.find((t: { slug: string }) => t.slug === slug) ?? null);
+      });
   }, [slug]);
 
   return (

@@ -13,8 +13,15 @@ export default function ScorePage() {
 
   useEffect(() => {
     fetch("/api/score")
-      .then((r) => r.json())
-      .then(setData);
+      .then(async (r) => {
+        if (r.status === 401) {
+          window.location.replace("/login");
+          return null;
+        }
+        if (!r.ok) return null;
+        return r.json();
+      })
+      .then((d) => d && setData(d));
   }, []);
 
   return (

@@ -18,11 +18,8 @@ export default function HomePage() {
   const [err, setErr] = useState("");
 
   const load = () =>
-    fetch("/api/today")
-      .then((r) => {
-        if (!r.ok) throw new Error("Could not load today");
-        return r.json();
-      })
+    import("@/lib/api")
+      .then(({ api }) => api<NonNullable<typeof data>>("/api/today"))
       .then(setData)
       .catch((e) => setErr(e.message));
 

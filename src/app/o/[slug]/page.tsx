@@ -28,15 +28,22 @@ export default function TypeListPage() {
   const [err, setErr] = useState("");
 
   useEffect(() => {
-    Promise.all([fetch("/api/types").then((r) => r.json()), fetch("/api/records").then((r) => r.json())])
+    Promise.all([
+      fetch("/api/types").then((r) => r.json()),
+      fetch("/api/records").then((r) => r.json()),
+    ])
       .then(([types, records]) => {
+        if (!Array.isArray(types)) {
+          setErr(types.error || "Sign in required");
+          return;
+        }
         const t = (types as Type[]).find((x) => x.slug === slug);
         if (!t) {
           setErr("This object type does not exist.");
           return;
         }
         setType(t);
-        setRows((records as Rec[]).filter((r) => r.objectTypeId === t.id));
+        setRows(Array.isArray(records) ? (records as Rec[]).filter((r) => r.objectTypeId === t.id) : []);
       })
       .catch(() => setErr("Could not load objects."));
   }, [slug]);
